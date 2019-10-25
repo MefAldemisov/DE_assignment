@@ -220,13 +220,10 @@ class GUI(Frame):
         Button(frame, text="Show the result", command=plot_graph).grid(row=5, column=0, columnspan=2)
         Button(frame, text="Change IV", command=change_frame).grid(row=6, column=0, columnspan=2)
 
-
-
 def main():
     root = Tk()
     GUI(root)
     root.mainloop()
-
 
 if __name__ == '__main__':
     main()
