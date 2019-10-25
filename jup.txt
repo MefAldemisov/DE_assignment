@@ -1,0 +1,23 @@
+[I 16:24:51.183 NotebookApp] The port 8888 is already in use, trying another port.
+[I 16:24:51.184 NotebookApp] The port 8889 is already in use, trying another port.
+[I 16:24:51.184 NotebookApp] The port 8890 is already in use, trying another port.
+[I 16:24:51.184 NotebookApp] The port 8891 is already in use, trying another port.
+[I 16:24:51.186 NotebookApp] Serving notebooks from local directory: /home/alina/workspase/InnoTasks/DE_assignment
+[I 16:24:51.186 NotebookApp] The Jupyter Notebook is running at:
+[I 16:24:51.186 NotebookApp] http://localhost:8892/?token=f67a19def747600041b43bf117a5397780047b9c6defbde5
+[I 16:24:51.187 NotebookApp]  or http://127.0.0.1:8892/?token=f67a19def747600041b43bf117a5397780047b9c6defbde5
+[I 16:24:51.187 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 16:24:51.206 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/alina/.local/share/jupyter/runtime/nbserver-6562-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8892/?token=f67a19def747600041b43bf117a5397780047b9c6defbde5
+     or http://127.0.0.1:8892/?token=f67a19def747600041b43bf117a5397780047b9c6defbde5
+[6596:6596:1025/162451.405948:ERROR:chrome_content_client.cc(342)] Failed to locate and load the component updated flash plugin.
+[6632:6632:1025/162451.471962:ERROR:sandbox_linux.cc(369)] InitializeSandbox() called with multiple threads in process gpu-process.
+Opening in existing browser session.
+[I 16:24:59.539 NotebookApp] Kernel started: 60fbc47d-9cc0-4af2-bedd-8fe9f10e2f19
+[I 16:25:13.193 NotebookApp] Starting buffering for 60fbc47d-9cc0-4af2-bedd-8fe9f10e2f19:a5c6410a87f4438d8139a07e38007889
+[W 16:25:13.561 NotebookApp] Notebook Tests.ipynb is not trusted
+[I 16:26:06.854 NotebookApp] Starting buffering for 60fbc47d-9cc0-4af2-bedd-8fe9f10e2f19:54ce68b1133949c689a207ac0166ad32
