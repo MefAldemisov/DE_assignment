@@ -149,7 +149,7 @@ class IVP_plotter:
         N - length of the array of x
         '''
         x = np.linspace(ivp.x_0, ivp.x_max, N)
-        f = plt.figure(figsize=(30, 10))
+        f = plt.figure(figsize=(15, 4))
         # computations
         approximations = [  ivp.y(x),
                             self.__compute_euler(x, ivp), 
@@ -196,10 +196,10 @@ class IVP_plotter:
         '''
         assert n_max > n_min, "n_min is out of range"
         assert n_length > 0, "n_length should be positive integer"
-        f = plt.figure(figsize=(10, 10))
+        f = plt.figure(figsize=(15, 4))
         # computation
         Ns = np.linspace(n_min, n_max, n_length)
-        ys = [  np.zero(len(Ns)),
+        ys = [  np.zeros(len(Ns)),
                 self.__get_error_array(Ns, ivp, self.__compute_euler),
                 self.__get_error_array(Ns, ivp, self.__compute_improved_euler),
                 self.__get_error_array(Ns, ivp, self.__compute_runge_kutta)]
