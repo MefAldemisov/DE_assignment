@@ -4,22 +4,28 @@ plt.style.use("default")        # important for IDE
 
 class IVP:
     '''
-        Class that represents specificly MY ivp
+        Class that represents any first-order ivp
         It is separated due to the fact,
         that it would be possibly
         essential to emplement solutions of
         some other equations
     '''
-    def __init__(self, x_0=1, y_0=2, x_max=10):
+    def __init__(self, x_0, y_0, x_max, der, c_1, y_ex):
         '''
         (x_0, y_0) - coordinates of the inital value
         x_max - max x to approximate
+        der - lambda function of x, y - derivative
+        c_1 - lambda function of x, y - coefficient
+        y_ex - lambda function of x - exact solution
         '''
-        assert x_max > x_0, "x_0 is out of range"
-        assert x_0 != 0, "x_0 is out of range"
+        self.__der = der
+        self.__c_1 = c_1
+        self.__y_ex = y_ex
+
         self.x_max = x_max
         self.x_0 = x_0
         self.y_0 = y_0
+
         self.y = self.__create_y_exact()
         self.undefined_x = [0] # list of dots that are forbidden for this function
     
@@ -36,18 +42,38 @@ class IVP:
         x, y - np.arrays/numbers to
         compute derivative of my function
         '''
-        assert x!=0, "x is out of range"
-        return 2*x**3 + 2*y/x
+        assert x not in self.undefined_x, "x is out of range"
+        return self.__der(x, y)
 
     def __create_y_exact(self):
         '''
         returns the exact solution of IVP 
         with constant substituted
         '''
-        c_1 = self.y_0/(self.x_0)**2 - self.x_0**2
-        return lambda x : x**4 + c_1*x**2
-    
+        c_1 = self.__c_1(self.x_0, self.y_0)
+        return lambda x: self.__y_ex(x, c_1)
+
+class my_IVP(IVP):
+
+    '''
+        Class that represents specificly my IVP
+    '''
+
+    def __init__(self, x_0=1, y_0=2, x_max=10):
+        '''
+        Class that plots the results of approximation
+        for a forth IVP (works with any of them)
+        '''
+        assert x_max > x_0, "x_0 is out of range"
+        assert x_0 != 0, "x_0 is out of range"
+        super().__init__(   x_0, y_0, x_max, 
+                            der=lambda x, y: 2*x**3 + 2*y/x, 
+                            c_1=lambda x, y: self.y_0/(self.x_0)**2 - self.x_0**2,
+                            y_ex=lambda x, c_1 : x**4 + c_1*x**2)
+
+
 class IVP_plotter:
+
     def __init__(self):
         '''
         Class that plots the results of approximation
@@ -114,17 +140,17 @@ class IVP_plotter:
         axis_names - names of the axis to be written
         '''
         assert len(ys)==4, "Incorrect dimensionality"
-        assert subplot_index in range(4), "No such subplot supported"
+        assert subplot_index in range(3), "No such subplot supported"
 
-        if subplot_index > 0:   plt.subplot(130+subplot_index)
+        if subplot_index > 0:   plt.subplot(120+subplot_index)
 
         plt.title(title)
         plt.xlabel(axis_names[0])
         plt.ylabel(axis_names[1])
         plt.plot(x, ys[0], 'k-', label="exact")
         plt.plot(x, ys[1], 'r--', label="euler")
-        plt.plot(x, ys[2], 'b--', label="improved euler")
-        plt.plot(x, ys[3], 'g--', label="rk")
+        plt.plot(x, ys[2], 'b-.', label="improved euler", alpha=0.7)
+        plt.plot(x, ys[3], 'g.', label="rk", markersize=5, alpha=0.7)
         plt.legend()
         plt.grid()
 
@@ -149,7 +175,7 @@ class IVP_plotter:
         N - length of the array of x
         '''
         x = np.linspace(ivp.x_0, ivp.x_max, N)
-        f = plt.figure(figsize=(15, 4))
+        f = plt.figure(figsize=(10, 4))
         # computations
         approximations = [  ivp.y(x),
                             self.__compute_euler(x, ivp), 
@@ -160,8 +186,8 @@ class IVP_plotter:
         local_errors = [self.__local(glob) for glob in global_errors]
         # plotting    
         self.__plot_results(x, approximations, "Approximations of the IVP", 1)
-        self.__plot_results(x, global_errors, "Global errors", 2)
-        self.__plot_results(x, local_errors, "Local errors", 3)
+        # self.__plot_results(x, global_errors, "Global errors", 2)
+        self.__plot_results(x, local_errors, "Local errors", 2)
         return f
 
 
@@ -196,7 +222,7 @@ class IVP_plotter:
         '''
         assert n_max > n_min, "n_min is out of range"
         assert n_length > 0, "n_length should be positive integer"
-        f = plt.figure(figsize=(15, 4))
+        f = plt.figure(figsize=(10, 4))
         # computation
         Ns = np.linspace(n_min, n_max, n_length)
         ys = [  np.zeros(len(Ns)),

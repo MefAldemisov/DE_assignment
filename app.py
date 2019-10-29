@@ -1,8 +1,7 @@
 import tkinter as tk
+from tkinter import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter import Tk, Frame, Button, Label, Entry, IntVar
-from tkinter import BOTH, LEFT, TOP, RIGHT
-from computations import IVP, IVP_plotter
+from computations import IVP, IVP_plotter, my_IVP
 
 class GUI(Frame):
 
@@ -16,20 +15,29 @@ class GUI(Frame):
         self.n_min = 2
         self.n_max = 1000
         self.n_length = 100
-        self.ivp = IVP(self.x_0_default, self.y_0_default, self.x_max_default)
+        self.ivp = my_IVP(self.x_0_default, self.y_0_default, self.x_max_default)
         self.computer = IVP_plotter()
 
         self.initUI()
 
-    def initUI(self):
+    def save_figure(self, fig):  
+        f = tk.filedialog.asksaveasfile(mode='w', defaultextension=".png")
+        if f is None: return
+        fig.savefig(f.name)
+        f.close()
 
+    def initUI(self):
+        '''
+        GUI building
+        '''
         self.master.title("DE Assignment")
         self.pack()
-
+        # frames creation
         frame = Frame(self, borderwidth=1)
         frame.pack()
-        Label(frame, text="Initial parameters:").grid(row=0, column=0)
-        
+        # description
+        Label(frame, text="Initial parameters:").grid(row=0, column=0, columnspan=3)
+        # labels creation
         x_0_var, y_0_var, x_max_var, n_var = IntVar(), IntVar(), IntVar(), IntVar()
 
         Label(frame, text="x_0:").grid(row=1, column=0)
@@ -42,35 +50,45 @@ class GUI(Frame):
         Entry(frame, text=x_max_var).grid(row=1, column=5)
 
         Label(frame, text="N:").grid(row=1, column=6)
-        e_n = Entry(frame, text=n_var)
-        e_n.grid(row=1, column=7)
+        Entry(frame, text=n_var).grid(row=1, column=7)
 
         x_0_var.set(self.x_0_default)
         y_0_var.set(self.y_0_default)
         x_max_var.set(self.x_max_default)
         n_var.set(self.n_default)
         
-        figure = IVP_plotter().plot_ivp(self.ivp)
+        # figure drawing
 
-        self.bar = FigureCanvasTkAgg(figure, frame).get_tk_widget()
-        self.bar.grid(column=0, row=2, rowspan=6, columnspan=9)
+        def plot_first_figure():
+            '''
+            draws current ivp's approximation
+            '''
+            self.figure1 = IVP_plotter().plot_ivp(self.ivp, int(n_var.get()))
+            self.bar = FigureCanvasTkAgg(self.figure1, frame).get_tk_widget()
+            self.bar.grid(column=0, row=2, rowspan=6, columnspan=10)
 
-        def plot_graph():
+        plot_first_figure()
+
+        def replot_graph():
+            '''
+            funcion, that plots the graph of approximations
+            (putted inside to have access to the variables)
+            '''
+            # update ivp
             x_0 = int(x_0_var.get())
             y_0 = int(y_0_var.get())
             x_max = int(x_max_var.get())
-            n = int(n_var.get())
-            
+            self.ivp = my_IVP(x_0, y_0, x_max)
+            # update GUI
             self.bar = None
-            self.ivp = IVP(x_0, y_0, x_max)
-            figure = IVP_plotter().plot_ivp(self.ivp, n)
-            self.bar = FigureCanvasTkAgg(figure, frame).get_tk_widget()
-            self.bar.grid(column=0, row=2, rowspan=6, columnspan=9)
-            plot_error_graph()
+            plot_first_figure()
+            replot_error_graph()
 
-        Button(frame, text="Show the result", command=plot_graph).grid(row=1, column=8)
-        
-        # second part
+        # buttons
+        Button(frame, text="Show", command=replot_graph).grid(row=1, column=8)
+        Button(frame, text="Save", command=lambda :self.save_figure(self.figure1)).grid(row=1, column=9)
+
+        # second part of the frame
         Label(frame, text="Errors").grid(row=9, column=0)
         n_min_var, n_max_var, n_length_var = IntVar(), IntVar(), IntVar()
 
@@ -87,27 +105,38 @@ class GUI(Frame):
         n_max_var.set(self.n_max)
         n_length_var.set(self.n_length)
         
-        figure = IVP_plotter().plot_global_errors_analysis(self.ivp, self.n_min, self.n_max, self.n_length)
-
-        self.bar = FigureCanvasTkAgg(figure, frame).get_tk_widget()
-        self.bar.grid(column=0, row=11, rowspan=6, columnspan=9)
-
-        def plot_error_graph():
+        def plot_second_graph():
+            '''
+            plots the graph of global errors
+            '''
             n_min = int(n_min_var.get())
             n_max = int(n_max_var.get())
             n_length = int(n_length_var.get())
+
+            self.figure2 = IVP_plotter().plot_global_errors_analysis(self.ivp, n_min, n_max, n_length)
+            self.bar2 = FigureCanvasTkAgg(self.figure2, frame).get_tk_widget()
+            self.bar2.grid(column=0, row=11, rowspan=6, columnspan=10)
+
+        plot_second_graph()
+
+        def replot_error_graph():
+            '''
+            updates the existing error graph
+            '''
+            self.bar2 = None
+            plot_second_graph()
             
-            self.bar = None
-            figure = IVP_plotter().plot_global_errors_analysis(self.ivp, n_min, n_max, n_length)
-            self.bar = FigureCanvasTkAgg(figure, frame).get_tk_widget()
-            self.bar.grid(column=0, row=11, rowspan=6, columnspan=9)
-            
-        Button(frame, text="Show the result", command=plot_error_graph).grid(row=10, column=8, columnspan=2)
+        Button(frame, text="Show", command=replot_error_graph).grid(row=10, column=8)
+        Button(frame, text="Save", command=lambda: self.save_figure(self.figure2)).grid(row=10, column=9)
 
 def main():
+    '''
+    Shows the GUI
+    '''
     root = Tk()
     GUI(root)
     root.mainloop()
-
+    
+# start
 if __name__ == '__main__':
     main()
