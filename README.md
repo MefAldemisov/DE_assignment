@@ -12,4 +12,5 @@
 - [x] Think|Ask about instalation
 - [x] Add depemdence of the IVP on some interface...
 - [ ] Write report
+- [ ] Track errors due to the discontinuity
 - [ ] Write documentation to GUI

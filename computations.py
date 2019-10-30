@@ -66,10 +66,13 @@ class my_IVP(IVP):
         '''
         assert x_max > x_0, "x_0 is out of range"
         assert x_0 != 0, "x_0 is out of range"
+        self.der = lambda x, y: 2*x**3 + 2*y/x
+        self.c_1 = lambda x, y: self.y_0/(self.x_0)**2 - self.x_0**2
+        self.y_ex = lambda x, c_1 : x**4 + c_1*x**2
         super().__init__(   x_0, y_0, x_max, 
-                            der=lambda x, y: 2*x**3 + 2*y/x, 
-                            c_1=lambda x, y: self.y_0/(self.x_0)**2 - self.x_0**2,
-                            y_ex=lambda x, c_1 : x**4 + c_1*x**2)
+                            der=self.der, 
+                            c_1=self.c_1,
+                            y_ex=self.y_ex)
 
 
 class IVP_plotter:
@@ -89,7 +92,7 @@ class IVP_plotter:
         '''
         assert len(x) > 1, "Not enought data to approximate on"
         y = x.copy() # create array of the same length
-        y[0] = ivp.derivative(ivp.x_0, ivp.y_0)
+        y[0] = ivp.y_0
         for i in range(1, len(x)):
             y[i] = y[i-1] + (x[1] - x[0]) * ivp.derivative(x[i-1], y[i-1])
         return y
@@ -103,7 +106,7 @@ class IVP_plotter:
         assert len(x) > 1, "Not enought data to approximate on"
         y = x.copy() # create array of the same length
         h = x[1] - x[0] # step length
-        y[0] = ivp.derivative(ivp.x_0, ivp.y_0)
+        y[0] = ivp.y_0
         for i in range(1, len(x)):
             adder = ivp.derivative(x[i], y[i-1]+h*ivp.derivative(x[i-1], y[i-1]))
             y[i] = y[i-1] + h / 2 * (ivp.derivative(x[i-1], y[i-1]) + adder)
@@ -119,7 +122,7 @@ class IVP_plotter:
 
         y = x.copy() # create array of the same length
         h = x[1] - x[0] # step length
-        y[0] = ivp.derivative(ivp.x_0, ivp.y_0)
+        y[0] = ivp.y_0
         for i in range(1, len(x)):
             k1 = ivp.derivative(x[i-1], y[i-1])
             k2 = ivp.derivative(x[i-1]+h/2, y[i-1]+h/2*k1)
@@ -140,7 +143,7 @@ class IVP_plotter:
         axis_names - names of the axis to be written
         '''
         assert len(ys)==4, "Incorrect dimensionality"
-        assert subplot_index in range(3), "No such subplot supported"
+        assert subplot_index in range(4), "No such subplot supported"
 
         if subplot_index > 0:   plt.subplot(120+subplot_index)
 
@@ -150,20 +153,30 @@ class IVP_plotter:
         plt.plot(x, ys[0], 'k-', label="exact")
         plt.plot(x, ys[1], 'r--', label="euler")
         plt.plot(x, ys[2], 'b-.', label="improved euler", alpha=0.7)
-        plt.plot(x, ys[3], 'g.', label="rk", markersize=5, alpha=0.7)
+        plt.plot(x, ys[3], 'g.', label="rk", markersize=5, alpha=0.5)
         plt.legend()
         plt.grid()
 
-    def __local(self, global_errors):
+    def get_local_for_fn(self, x, y_exact, errors, function, ivp):
+        l_err = []
+        for i in range(1, len(y_exact)):
+            new_ivp = IVP(x[i-1], y_exact[i-1], x[i], ivp.der, ivp.c_1, ivp.y_ex)
+            l_err.append(y_exact[i]-function(x[i-1:i+1], new_ivp)[-1]) 
+        return np.array([0]+l_err)
+
+    def __local(self, approximations, x, ivp):
         '''
         For a given global_errors array 
         outputs the array of the local errors
         '''
-        assert len(global_errors) > 2, "Not enought data to compute on"
-
-        new_data = np.append(np.array([0]), global_errors)
-        difference = np.append(np.array([0, 0]), global_errors[:-1])
-        return (new_data-difference)[1:]
+        # assert len(global_errors) > 2, "Not enought data to compute on"
+        result = [
+            np.zeros(len(approximations[0])),
+            self.get_local_for_fn(x, approximations[0], approximations[1], self.__compute_euler, ivp),
+            self.get_local_for_fn(x, approximations[0], approximations[2], self.__compute_improved_euler, ivp),
+            self.get_local_for_fn(x, approximations[0], approximations[3], self.__compute_runge_kutta, ivp)
+        ]
+        return result
 
     def plot_ivp(self, ivp, N=100):
         '''
@@ -182,12 +195,12 @@ class IVP_plotter:
                             self.__compute_improved_euler(x, ivp), 
                             self.__compute_runge_kutta(x, ivp)]
        
-        global_errors = [approximations[0]-appr for appr in approximations]
-        local_errors = [self.__local(glob) for glob in global_errors]
+        # global_errors = [approximations[0]-appr for appr in approximations]
+        local_errors = self.__local(approximations, x, ivp)
         # plotting    
         self.__plot_results(x, approximations, "Approximations of the IVP", 1)
         # self.__plot_results(x, global_errors, "Global errors", 2)
-        self.__plot_results(x, local_errors, "Local errors", 2)
+        self.__plot_results(x,[np.log(err) for err in local_errors], "Local errors", 2, axis_names=["x", "log(y)"])
         return f
 
 
