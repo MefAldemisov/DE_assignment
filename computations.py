@@ -1,6 +1,8 @@
 import numpy as np              # math
 import matplotlib.pyplot as plt # graphs
+import warnings                 # to except output on log(0)
 plt.style.use("default")        # important for IDE
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class IVP:
     '''
@@ -13,7 +15,7 @@ class IVP:
     def __init__(self, x_0, y_0, x_max, der, c_1, y_ex):
         '''
         (x_0, y_0) - coordinates of the inital value
-        x_max - max x to approximate
+        x_max - int, max x to approximate
         der - lambda function of x, y - derivative
         c_1 - lambda function of x, y - coefficient
         y_ex - lambda function of x - exact solution
@@ -42,7 +44,10 @@ class IVP:
         x, y - np.arrays/numbers to
         compute derivative of my function
         '''
-        assert x not in self.undefined_x, "x is out of range"
+        if x in self.undefined_x:
+            warnings.warn("x is out of range", RuntimeWarning)
+            x = np.array(x) if type(x) != np.array else x
+            x[x in np.array(self.undefined_x)] = None
         return self.__der(x, y)
 
     def __create_y_exact(self):
@@ -131,50 +136,79 @@ class IVP_plotter:
             y[i] = y[i-1] + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
         return y
 
-    def __plot_results(self, x, ys, title, subplot_index=1, axis_names=["x","y"]):
+    def __plot_results(self, x, ys, title, subplot_index=1, axis_names=["x","y"], ivp=None):
         '''
         Internal method that only plots 4 graphs
 
-        x - x-axis values, length n
-        ys - array with dimensionality (4, n)
+        x - np.array, x-axis values, length n
+        ys - array with dimensionality (4, n), subarrays - np.arrays
         title - string that will be the eader og the plot
-        subplot index - 0 if not required
+        subplot index - int, 0 if not required
                         in [1, 2, 3] if needed
-        axis_names - names of the axis to be written
+        axis_names - array with len 2, names of the axis to be written
+        ivp - IVP, problem to be solved, for exact solution only
         '''
-        assert len(ys)==4, "Incorrect dimensionality"
+        assert len(ys) == 4, "Incorrect dimensionality"
         assert subplot_index in range(4), "No such subplot supported"
+        assert len(axis_names) == 2, "Wrong axis names"
 
         if subplot_index > 0:   plt.subplot(120+subplot_index)
 
         plt.title(title)
         plt.xlabel(axis_names[0])
         plt.ylabel(axis_names[1])
-        plt.plot(x, ys[0], 'k-', label="exact")
+
+        if (subplot_index == 1):
+            assert ivp, "No ivp to compute precise graph"
+            x_first = np.arange(ivp.x_0, ivp.x_max, 0.001)
+            plt.plot(x_first, ivp.y(x_first), 'k-', label="exact", lw=1)
+            
         plt.plot(x, ys[1], 'r--', label="euler")
-        plt.plot(x, ys[2], 'b-.', label="improved euler", alpha=0.7)
-        plt.plot(x, ys[3], 'g.', label="rk", markersize=5, alpha=0.5)
+        plt.plot(x, ys[2], 'b-.', label="improved euler", alpha=0.7, lw=2)
+        plt.plot(x, ys[3], 'g', label="rk", markersize=5, alpha=0.5, lw=3)
         plt.legend()
         plt.grid()
 
-    def get_local_for_fn(self, x, y_exact, errors, function, ivp):
-        l_err = []
+    def __get_local_for_fn(self, x, y_exact, errors, function, ivp):
+        '''
+        Returns local error for a given function
+
+        x - np.array, axis to compute on
+        y_exact - np.array, precise values
+        errors - np.array, approximation
+        function - function, approximator
+        ivp - IVP, problem to be solved
+        '''
+        l_err = [] # to be returned
         for i in range(1, len(y_exact)):
+            # calculate new approximation with the base on the next precise (x, y)
             new_ivp = IVP(x[i-1], y_exact[i-1], x[i], ivp.der, ivp.c_1, ivp.y_ex)
+            # append the difference to the resulting array
             l_err.append(y_exact[i]-function(x[i-1:i+1], new_ivp)[-1]) 
+        # zero added as a first value
         return np.array([0]+l_err)
 
     def __local(self, approximations, x, ivp):
         '''
         For a given global_errors array 
         outputs the array of the local errors
+
+        approximations - array of 4 np.arrays with computed 
+            exact, 
+            euler, 
+            improved euler,
+            rk
+        approximations
+
+        x - the first axis with dimensionality of subarrays
+        ivp - problem to be solved
         '''
-        # assert len(global_errors) > 2, "Not enought data to compute on"
+        assert len(approximations) == 4, "Not enought data to compute on (wrong approximations)"
         result = [
             np.zeros(len(approximations[0])),
-            self.get_local_for_fn(x, approximations[0], approximations[1], self.__compute_euler, ivp),
-            self.get_local_for_fn(x, approximations[0], approximations[2], self.__compute_improved_euler, ivp),
-            self.get_local_for_fn(x, approximations[0], approximations[3], self.__compute_runge_kutta, ivp)
+            self.__get_local_for_fn(x, approximations[0], approximations[1], self.__compute_euler, ivp),
+            self.__get_local_for_fn(x, approximations[0], approximations[2], self.__compute_improved_euler, ivp),
+            self.__get_local_for_fn(x, approximations[0], approximations[3], self.__compute_runge_kutta, ivp)
         ]
         return result
 
@@ -185,8 +219,9 @@ class IVP_plotter:
             - resulted approximation of the given IVP
             - global errors from x
             - local errors from x
-        N - length of the array of x
+        N - int, length of the array of x
         '''
+        assert N > 0, "Amount of x-es should be greater then 0"
         x = np.linspace(ivp.x_0, ivp.x_max, N)
         f = plt.figure(figsize=(10, 4))
         # computations
@@ -198,9 +233,9 @@ class IVP_plotter:
         # global_errors = [approximations[0]-appr for appr in approximations]
         local_errors = self.__local(approximations, x, ivp)
         # plotting    
-        self.__plot_results(x, approximations, "Approximations of the IVP", 1)
+        self.__plot_results(x, approximations, "Approximations of the IVP", 1, ivp=ivp)
         # self.__plot_results(x, global_errors, "Global errors", 2)
-        self.__plot_results(x,[np.log(err) for err in local_errors], "Local errors", 2, axis_names=["x", "log(y)"])
+        self.__plot_results(x,[np.log(abs(err)) for err in local_errors], "Local errors", 2, axis_names=["x", "log(y)"])
         return f
 
 
@@ -233,8 +268,12 @@ class IVP_plotter:
         n_max - max length of x's array
         n_length - amount of n to check within given bounds
         '''
+        # contracts
         assert n_max > n_min, "n_min is out of range"
+        assert n_max > 0, "n_max should be positive integer"
+        assert n_min > 0, "n_min should be positive integer"
         assert n_length > 0, "n_length should be positive integer"
+
         f = plt.figure(figsize=(10, 4))
         # computation
         Ns = np.linspace(n_min, n_max, n_length)

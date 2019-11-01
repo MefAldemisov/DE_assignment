@@ -12,5 +12,8 @@
 - [x] Think|Ask about instalation
 - [x] Add depemdence of the IVP on some interface...
 - [ ] Write report
-- [ ] Track errors due to the discontinuity
-- [ ] Write documentation to GUI
+- [x] Track errors due to the discontinuity
+- [ ] Add flexibility in terms of methods to use
+- [ ] Add formulas: precise solution, task text
+- [x] Write documentation to GUI
+- [x] Check documaentation to computations
