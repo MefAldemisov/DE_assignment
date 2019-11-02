@@ -20,7 +20,7 @@ class IVP:
         der - lambda function of x, y - derivative
         c_1 - lambda function of x, y - coefficient
         y_ex - lambda function of x - exact solution
-        undef_x - list of dots, where x is undefined
+        undef_x - lambda function- retrns true if x is undefined
         '''
         self.__der = der
         self.__c_1 = c_1
@@ -32,24 +32,16 @@ class IVP:
 
         self.y = self.__create_y_exact()
         self.undefined_x = undef_x # list of dots that are forbidden for this function
-    
-    def check_x(self, x):
-        '''
-        x - array of input values
-        Returns: True - x is appropriate
-                 False - x is denied
-        '''
-        return x not in self.undefined_x
 
     def derivative(self, x, y):
         '''
         x, y - np.arrays/numbers to
         compute derivative of my function
         '''
-        if x in self.undefined_x:
+        if self.undefined_x(x):
             warnings.warn("x is out of range", RuntimeWarning)
             x = np.array(x) if type(x) != np.array else x
-            x[x in np.array(self.undefined_x)] = None
+            x[self.undefined_x(x)] = None
         return self.__der(x, y)
 
     def __create_y_exact(self):
@@ -76,15 +68,18 @@ class my_IVP(IVP):
         self.der = lambda x, y: 2*x**3 + 2*y/x
         self.c_1 = lambda x, y: self.y_0/(self.x_0)**2 - self.x_0**2
         self.y_ex = lambda x, c_1 : x**4 + c_1*x**2
-        undef = [0]
+        # undefined case checking
+        undef_arr = [0]
         if (y_0 < x_0**4 and x_0 != 0):
-            sqrt = (-c_1(x_0, y_0))**0.5
-            undef = [sqrt, -sqrt]
+            sqrt = (-self.c_1(x_0, y_0))**0.5
+            undef_arr = [sqrt, -sqrt]
+        self.undef_x = lambda x: x in undef_arr
+        
         super().__init__(   x_0, y_0, x_max, 
                             der=self.der, 
                             c_1=self.c_1,
-                            y_ex=self.y_ex
-                            undef_x=undef)
+                            y_ex=self.y_ex,
+                            undef_x=self.undef_x)
 
 class IVP_plotter:
 
@@ -114,7 +109,7 @@ class IVP_plotter:
         of the solution by Inptoved Euler's method 
         on a given set of inputs (x)
         '''
-        assert len(x) > 1, "Not enought data to approximate on"
+        assert len(x) > 1, "Not enough data to approximate on"
         y = x.copy() # create array of the same length
         h = x[1] - x[0] # step length
         y[0] = ivp.y_0
@@ -188,7 +183,7 @@ class IVP_plotter:
         l_err = [] # to be returned
         for i in range(1, len(y_exact)):
             # calculate new approximation with the base on the next precise (x, y)
-            new_ivp = IVP(x[i-1], y_exact[i-1], x[i], ivp.der, ivp.c_1, ivp.y_ex)
+            new_ivp = IVP(x[i-1], y_exact[i-1], x[i], ivp.der, ivp.c_1, ivp.y_ex, ivp.undef_x)
             # append the difference to the resulting array
             l_err.append(y_exact[i]-function(x[i-1:i+1], new_ivp)[-1]) 
         # zero added as a first value
