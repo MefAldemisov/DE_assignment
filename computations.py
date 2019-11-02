@@ -137,7 +137,7 @@ class IVP_plotter:
             y[i] = y[i-1] + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
         return y
 
-    def __plot_results(self, x, ys, title, subplot_index=1, axis_names=["x","y"], ivp=None):
+    def __plot_results(self, x, ys, title, subplot_index=1, axis_names=["x","y"], ivp=None, methods=[1, 1, 1]):
         '''
         Internal method that only plots 4 graphs
 
@@ -148,6 +148,7 @@ class IVP_plotter:
                         in [1, 2, 3] if needed
         axis_names - array with len 2, names of the axis to be written
         ivp - IVP, problem to be solved, for exact solution only
+        methods - 
         '''
         assert len(ys) == 4, "Incorrect dimensionality"
         assert subplot_index in range(4), "No such subplot supported"
@@ -163,10 +164,11 @@ class IVP_plotter:
             assert ivp, "No ivp to compute precise graph"
             x_first = np.arange(ivp.x_0, ivp.x_max, 0.001)
             plt.plot(x_first, ivp.y(x_first), 'k-', label="exact", lw=1)
-            
-        plt.plot(x, ys[1], 'r--', label="Euler")
-        plt.plot(x, ys[2], 'b-.', label="Improved Euler", alpha=0.7, lw=2)
-        plt.plot(x, ys[3], 'g', label="Runge-Kutta", markersize=5, alpha=0.5, lw=3)
+
+        if (methods[0]): plt.plot(x, ys[1], 'r--', label="Euler")
+        if (methods[1]): plt.plot(x, ys[2], 'b-.', label="Improved Euler", alpha=0.7, lw=2)
+        if (methods[2]): plt.plot(x, ys[3], 'g', label="Runge-Kutta", markersize=5, alpha=0.5, lw=3)
+
         plt.legend()
         plt.grid()
 
@@ -213,7 +215,7 @@ class IVP_plotter:
         ]
         return result
 
-    def plot_ivp(self, ivp, N=100):
+    def plot_ivp(self, ivp, N=100, methods=[1, 1, 1]):
         '''
         Outputs the matplotpib.pyplot figure
         with 3 subplots:
@@ -234,9 +236,9 @@ class IVP_plotter:
         # global_errors = [approximations[0]-appr for appr in approximations]
         local_errors = self.__local(approximations, x, ivp)
         # plotting    
-        self.__plot_results(x, approximations, "Approximations of the IVP", 1, ivp=ivp)
+        self.__plot_results(x, approximations, "Approximations of the IVP", 1, ivp=ivp, methods=methods)
         # self.__plot_results(x, global_errors, "Global errors", 2)
-        self.__plot_results(x,[np.log(abs(err)) for err in local_errors], "Local errors", 2, axis_names=["x", "log(y)"])
+        self.__plot_results(x,[np.log(abs(err)) for err in local_errors], "Local errors", 2, axis_names=["x", "log(y)"], methods=methods)
         return f
 
 
@@ -262,7 +264,7 @@ class IVP_plotter:
         error = [self.__get_global_error(int(n), ivp, function) for n in Ns]
         return error
 
-    def plot_global_errors_analysis(self, ivp, n_min=100, n_max=1000, n_length=100):
+    def plot_global_errors_analysis(self, ivp, n_min=100, n_max=1000, n_length=100, methods=[1, 1, 1]):
         '''
         ivp - inital value problem to solve
         n_min - min length of x's array
@@ -283,6 +285,6 @@ class IVP_plotter:
                 self.__get_error_array(Ns, ivp, self.__compute_improved_euler),
                 self.__get_error_array(Ns, ivp, self.__compute_runge_kutta)]
         # plotting
-        self.__plot_results(Ns, ys, "Methods' max global errors", 0, ["N", "error"])
+        self.__plot_results(Ns, ys, "Methods' max global errors", 0, ["N", "error"], methods=methods)
         return f
     
