@@ -17,3 +17,9 @@
 - [ ] Add formulas: precise solution, task text
 - [x] Write documentation to GUI
 - [x] Check documaentation to computations
+- [x] Labels clarified
+- [x] Create UML Class diagram of the project
+- [x] Add new points of disontinuity: x = +-sqrt(-c) when y_0 < x_0^4
+- [ ] Error checking - lambda function
+- [ ] Think about flexibility for GUI class... probably it is reasonable to add dictionary for values?
+

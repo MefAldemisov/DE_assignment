@@ -6,19 +6,21 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class IVP:
     '''
-        Class that represents any first-order ivp
+        Class that represents any first-order ivp 
+        where x is defined everywhere except some dots
         It is separated due to the fact,
         that it would be possibly
         essential to emplement solutions of
         some other equations
     '''
-    def __init__(self, x_0, y_0, x_max, der, c_1, y_ex):
+    def __init__(self, x_0, y_0, x_max, der, c_1, y_ex, undef_x):
         '''
         (x_0, y_0) - coordinates of the inital value
         x_max - int, max x to approximate
         der - lambda function of x, y - derivative
         c_1 - lambda function of x, y - coefficient
         y_ex - lambda function of x - exact solution
+        undef_x - list of dots, where x is undefined
         '''
         self.__der = der
         self.__c_1 = c_1
@@ -29,7 +31,7 @@ class IVP:
         self.y_0 = y_0
 
         self.y = self.__create_y_exact()
-        self.undefined_x = [0] # list of dots that are forbidden for this function
+        self.undefined_x = undef_x # list of dots that are forbidden for this function
     
     def check_x(self, x):
         '''
@@ -74,11 +76,15 @@ class my_IVP(IVP):
         self.der = lambda x, y: 2*x**3 + 2*y/x
         self.c_1 = lambda x, y: self.y_0/(self.x_0)**2 - self.x_0**2
         self.y_ex = lambda x, c_1 : x**4 + c_1*x**2
+        undef = [0]
+        if (y_0 < x_0**4 and x_0 != 0):
+            sqrt = (-c_1(x_0, y_0))**0.5
+            undef = [sqrt, -sqrt]
         super().__init__(   x_0, y_0, x_max, 
                             der=self.der, 
                             c_1=self.c_1,
-                            y_ex=self.y_ex)
-
+                            y_ex=self.y_ex
+                            undef_x=undef)
 
 class IVP_plotter:
 
@@ -163,9 +169,9 @@ class IVP_plotter:
             x_first = np.arange(ivp.x_0, ivp.x_max, 0.001)
             plt.plot(x_first, ivp.y(x_first), 'k-', label="exact", lw=1)
             
-        plt.plot(x, ys[1], 'r--', label="euler")
-        plt.plot(x, ys[2], 'b-.', label="improved euler", alpha=0.7, lw=2)
-        plt.plot(x, ys[3], 'g', label="rk", markersize=5, alpha=0.5, lw=3)
+        plt.plot(x, ys[1], 'r--', label="Euler")
+        plt.plot(x, ys[2], 'b-.', label="Improved Euler", alpha=0.7, lw=2)
+        plt.plot(x, ys[3], 'g', label="Runge-Kutta", markersize=5, alpha=0.5, lw=3)
         plt.legend()
         plt.grid()
 
