@@ -62,6 +62,8 @@ class my_IVP(IVP):
         '''
         Class that plots the results of approximation
         for a forth IVP (works with any of them)
+        (x_0, y_0) - coordinates of the inital value
+        x_max - int, max x to approximate
         '''
         assert x_max > x_0, "x_0 is out of range"
         assert x_0 != 0, "x_0 is out of range"
@@ -148,7 +150,7 @@ class IVP_plotter:
                         in [1, 2, 3] if needed
         axis_names - array with len 2, names of the axis to be written
         ivp - IVP, problem to be solved, for exact solution only
-        methods - 
+        methods - bynary array of length 3: 0 or 1 - skip/plot for each method
         '''
         assert len(ys) == 4, "Incorrect dimensionality"
         assert subplot_index in range(4), "No such subplot supported"
@@ -223,6 +225,7 @@ class IVP_plotter:
             - global errors from x
             - local errors from x
         N - int, length of the array of x
+        methods - bynary array of length 3: 0 or 1 - skip/plot for each method
         '''
         assert N > 0, "Amount of x-es should be greater then 0"
         x = np.linspace(ivp.x_0, ivp.x_max, N)
@@ -270,12 +273,14 @@ class IVP_plotter:
         n_min - min length of x's array
         n_max - max length of x's array
         n_length - amount of n to check within given bounds
+        methods - bynary array of length 3: 0 or 1 - skip/plot for each method
         '''
         # contracts
         assert n_max > n_min, "n_min is out of range"
         assert n_max > 0, "n_max should be positive integer"
         assert n_min > 0, "n_min should be positive integer"
         assert n_length > 0, "n_length should be positive integer"
+        assert len(methods) == 3, "Invalid length of methods array"
 
         f = plt.figure(figsize=(10, 4))
         # computation
