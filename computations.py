@@ -68,7 +68,7 @@ class my_IVP(IVP):
         assert x_max > x_0, "x_0 is out of range"
         assert x_0 != 0, "x_0 is out of range"
         self.der = lambda x, y: 2*x**3 + 2*y/x
-        self.c_1 = lambda x, y: self.y_0/(self.x_0)**2 - self.x_0**2
+        self.c_1 = lambda x, y: y/(x)**2 - x**2
         self.y_ex = lambda x, c_1 : x**4 + c_1*x**2
         # undefined case checking
         undef_arr = [0]
@@ -257,6 +257,7 @@ class IVP_plotter:
         approximation - function that takes x and ivp and returns array of x's dimensionality
         '''
         x = np.linspace(ivp.x_0, ivp.x_max, N)
+        # x = np.array(list(itertools.compress(x, [i ivp.undefined_x(x[i]) for i in range(len(x))])))  
         diff = approximation(x, ivp)[-1] - ivp.y(x)[-1]
         return diff
 
