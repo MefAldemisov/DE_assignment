@@ -23,7 +23,7 @@ class GUI(Frame):
         for (var_name, var_value) in zip(vars_names, vars_values):
             self.variables[var_name].set(var_value)
         # ceckboxes
-        self.checks = [IntVar() for x in range(3)]
+        self.checks = [IntVar() for x in range(5)]
         for ch in self.checks: ch.set(1)
         # graphs
         self.figures = [None, None]
@@ -113,25 +113,25 @@ class GUI(Frame):
         self.master.title("DE Assignment")
         self.pack()
         # description
-        Label(self.frame, text="Initial parameters:").grid(row=0, column=0, columnspan=3)
+        Label(self.frame, text="Initial parameters:").grid(row=0, column=1)
         # checkboxes
-        methods = ["Euler", "Improved Euler", "RK"]
+        methods = ["Euler", "Improved Euler", "RK", "Log10 for local error", "Log10 global error"]
         col_index = 0
         for i in range(len(self.checks)):
-            Checkbutton(self.frame, text=methods[i]+':', variable=self.checks[i], 
+            Checkbutton(self.frame, text=methods[i], variable=self.checks[i], 
                         onvalue=1, offvalue=0).grid(row=1, column=col_index, columnspan=2)
             col_index += 2
         # first part drawing
         self.__add_variables_row (2, ['x_0', 'y_0', 'x_max', 'n'])
         self.__plot_figure(0, 3)
-        Button(self.frame, text="Show", command=lambda: self.__plot_figure(0, 3)).grid(row=1, column=8)
-        Button(self.frame, text="Save", command=lambda: self.__save_figure(0)).grid(row=1, column=9)
+        Button(self.frame, text="Show", command=lambda: self.__plot_figure(0, 3)).grid(row=2, column=8)
+        Button(self.frame, text="Save", command=lambda: self.__save_figure(0)).grid(row=2, column=9)
         # second part of the frame
-        Label(self.frame, text="Errors").grid(row=9, column=0)
+        Label(self.frame, text="Errors:").grid(row=9, column=1)
         self.__add_variables_row(11,  ['n_min', 'n_max', 'n_length'])
         self.__plot_figure(1, 12)
-        Button(self.frame, text="Show", command=lambda: self.__plot_figure(1, 12)).grid(row=10, column=8)
-        Button(self.frame, text="Save", command=lambda: self.__save_figure(1)).grid(row=10, column=9)
+        Button(self.frame, text="Show", command=lambda: self.__plot_figure(1, 12)).grid(row=11, column=8)
+        Button(self.frame, text="Save", command=lambda: self.__save_figure(1)).grid(row=11, column=9)
 
 def main():
     '''

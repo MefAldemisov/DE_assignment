@@ -82,7 +82,6 @@ class my_IVP(IVP):
                             c_1=self.c_1,
                             y_ex=self.y_ex,
                             undef_x=self.undef_x)
-
 class IVP_plotter:
 
     def __init__(self):
@@ -139,7 +138,7 @@ class IVP_plotter:
             y[i] = y[i-1] + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
         return y
 
-    def __plot_results(self, x, ys, title, subplot_index=1, axis_names=["x","y"], ivp=None, methods=[1, 1, 1]):
+    def __plot_results(self, x, ys, title, subplot_index=1, axis_names=["x","y"], ivp=None, methods=[1, 1, 1, 1]):
         '''
         Internal method that only plots 4 graphs
 
@@ -151,6 +150,7 @@ class IVP_plotter:
         axis_names - array with len 2, names of the axis to be written
         ivp - IVP, problem to be solved, for exact solution only
         methods - bynary array of length 3: 0 or 1 - skip/plot for each method
+                  and if we should use the log plot for local errors
         '''
         assert len(ys) == 4, "Incorrect dimensionality"
         assert subplot_index in range(4), "No such subplot supported"
@@ -174,7 +174,7 @@ class IVP_plotter:
         plt.legend()
         plt.grid()
 
-    def __get_local_for_fn(self, x, y_exact, errors, function, ivp):
+    def __get_local_for_fn(self, x, y_exact, function, ivp):
         '''
         Returns local error for a given function
 
@@ -188,12 +188,14 @@ class IVP_plotter:
         for i in range(1, len(y_exact)):
             # calculate new approximation with the base on the next precise (x, y)
             new_ivp = IVP(x[i-1], y_exact[i-1], x[i], ivp.der, ivp.c_1, ivp.y_ex, ivp.undef_x)
+            # a smal bug is here: y exact fpr each ivp is computed again
+            # 
             # append the difference to the resulting array
-            l_err.append(y_exact[i]-function(x[i-1:i+1], new_ivp)[-1]) 
+            l_err.append(y_exact[i]-(function(x[i-1:i+1], new_ivp)[-1])) 
         # zero added as a first value
         return np.array([0]+l_err)
 
-    def __local(self, approximations, x, ivp):
+    def __local(self, exact_values, x, ivp):
         '''
         For a given global_errors array 
         outputs the array of the local errors
@@ -208,16 +210,16 @@ class IVP_plotter:
         x - the first axis with dimensionality of subarrays
         ivp - problem to be solved
         '''
-        assert len(approximations) == 4, "Not enought data to compute on (wrong approximations)"
         result = [
-            np.zeros(len(approximations[0])),
-            self.__get_local_for_fn(x, approximations[0], approximations[1], self.__compute_euler, ivp),
-            self.__get_local_for_fn(x, approximations[0], approximations[2], self.__compute_improved_euler, ivp),
-            self.__get_local_for_fn(x, approximations[0], approximations[3], self.__compute_runge_kutta, ivp)
+            np.zeros(len(exact_values)),
+            self.__get_local_for_fn(x, exact_values, self.__compute_euler, ivp),
+            self.__get_local_for_fn(x, exact_values, self.__compute_improved_euler, ivp),
+            self.__get_local_for_fn(x, exact_values, self.__compute_runge_kutta, ivp)
         ]
         return result
 
-    def plot_ivp(self, ivp, N=100, methods=[1, 1, 1]):
+
+    def plot_ivp(self, ivp, N=100, methods=[1]*5):
         '''
         Outputs the matplotpib.pyplot figure
         with 3 subplots:
@@ -226,6 +228,7 @@ class IVP_plotter:
             - local errors from x
         N - int, length of the array of x
         methods - bynary array of length 3: 0 or 1 - skip/plot for each method
+                  and if we should use the log plot for local/global errors
         '''
         assert N > 0, "Amount of x-es should be greater then 0"
         x = np.linspace(ivp.x_0, ivp.x_max, N)
@@ -237,11 +240,13 @@ class IVP_plotter:
                             self.__compute_runge_kutta(x, ivp)]
        
         # global_errors = [approximations[0]-appr for appr in approximations]
-        local_errors = self.__local(approximations, x, ivp)
+        local_errors = self.__local(approximations[0], x, ivp)
         # plotting    
         self.__plot_results(x, approximations, "Approximations of the IVP", 1, ivp=ivp, methods=methods)
         # self.__plot_results(x, global_errors, "Global errors", 2)
-        self.__plot_results(x,[np.log(abs(err)) for err in local_errors], "Local errors", 2, axis_names=["x", "log(y)"], methods=methods)
+        local_to_plot = local_errors if methods[3]==0 else [np.log10(abs(err)) for err in local_errors]
+        self.__plot_results(x, local_to_plot, "Local errors", 2, 
+                            axis_names=["x", "log(y)" if methods[3] else "y"], methods=methods)
         return f
 
 
@@ -267,20 +272,21 @@ class IVP_plotter:
         error = [self.__get_global_error(int(n), ivp, function) for n in Ns]
         return error
 
-    def plot_global_errors_analysis(self, ivp, n_min=100, n_max=1000, n_length=100, methods=[1, 1, 1]):
+    def plot_global_errors_analysis(self, ivp, n_min=100, n_max=1000, n_length=100, methods=[1]*5):
         '''
         ivp - inital value problem to solve
         n_min - min length of x's array
         n_max - max length of x's array
         n_length - amount of n to check within given bounds
-        methods - bynary array of length 3: 0 or 1 - skip/plot for each method
+        methods - bynary array of length 4: 0 or 1 - skip/plot for each method 
+                  and if we should use the log plot for local/global errors
         '''
         # contracts
         assert n_max > n_min, "n_min is out of range"
         assert n_max > 0, "n_max should be positive integer"
         assert n_min > 0, "n_min should be positive integer"
         assert n_length > 0, "n_length should be positive integer"
-        assert len(methods) == 3, "Invalid length of methods array"
+        assert len(methods) == 5, "Invalid length of methods array"
 
         f = plt.figure(figsize=(10, 4))
         # computation
@@ -290,6 +296,8 @@ class IVP_plotter:
                 self.__get_error_array(Ns, ivp, self.__compute_improved_euler),
                 self.__get_error_array(Ns, ivp, self.__compute_runge_kutta)]
         # plotting
-        self.__plot_results(Ns, ys, "Methods' max global errors", 0, ["N", "error"], methods=methods)
+        if methods[-1]: ys = [np.log10(np.abs(arr)) for arr in ys]
+        self.__plot_results(Ns, ys, "Methods' max global errors", 0, 
+                            ["N", "log(error)" if methods[-1] else "error"], methods=methods)
         return f
     
