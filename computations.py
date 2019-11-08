@@ -232,6 +232,10 @@ class IVP_plotter:
         '''
         assert N > 0, "Amount of x-es should be greater then 0"
         x = np.linspace(ivp.x_0, ivp.x_max, N)
+        # TODO: make universal
+        dropping_indexes = np.where(np.array([0 if ivp.undefined_x(x[i]) else 1 for i in range(len(x))])==0)
+        x = np.delete(x, dropping_indexes)
+
         f = plt.figure(figsize=(10, 4))
         # computations
         approximations = [  ivp.y(x),
@@ -257,7 +261,8 @@ class IVP_plotter:
         approximation - function that takes x and ivp and returns array of x's dimensionality
         '''
         x = np.linspace(ivp.x_0, ivp.x_max, N)
-        # x = np.array(list(itertools.compress(x, [i ivp.undefined_x(x[i]) for i in range(len(x))])))  
+        dropping_indexes = np.where(np.array([0 if ivp.undefined_x(x[i]) else 1 for i in range(len(x))])==0)
+        x = np.delete(x, dropping_indexes)
         diff = approximation(x, ivp)[-1] - ivp.y(x)[-1]
         return diff
 
